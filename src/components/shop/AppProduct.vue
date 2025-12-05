@@ -1,30 +1,16 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import DB from '@/services/DB.js';
-
-const products = ref([]);
-
-// Chargement de la "table" shop
-onMounted(async () => {
-  products.value = await DB.getProducts();
+const props = defineProps({
+  products: {
+    type: Array,
+    default: () => []
+  }
 });
 
-// Ajout dans une deuxième "table" (ex: /cart)
-const addToCart = async (product) => {
-  // ici tu utilises directement ta seconde ressource MockAPI
-  await fetch('https://692de13ee5f67cd80a4d4a6b.mockapi.io/cart', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      productId: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      quantity: 1
-    })
-  });
+const emit = defineEmits(['add-to-cart']);
 
-  console.log('Produit ajouté au panier :', product);
+// AppProduct ne fait plus de fetch, il émet vers AppMain
+const addToCart = (product) => {
+  emit('add-to-cart', product);
 };
 </script>
 
