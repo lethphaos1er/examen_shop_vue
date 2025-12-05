@@ -134,3 +134,6 @@ const deleteItem = async (index, item) => {
     </ul>
   </div>
 </template>
+<style scoped>
+
+</style>

@@ -30,7 +30,7 @@ const addToCart = (product) => {
         <img
           :src="product.image"
           :alt="product.name"
-          class="w-full"
+          class="product-image"
         />
         <div class="p-4">
           <h2 class="font-bold text-lg mb-2">
@@ -52,3 +52,11 @@ const addToCart = (product) => {
     </div>
   </section>
 </template>
+<style scoped>
+.product-image {
+  width: 100%;
+  height: 220px !important; 
+  object-fit: cover;
+  display: block;
+}
+</style>
