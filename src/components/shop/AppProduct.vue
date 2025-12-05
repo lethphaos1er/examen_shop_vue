@@ -1,4 +1,5 @@
 <script setup>
+// AppProduct reçoit la liste des produits depuis AppMain
 const props = defineProps({
   products: {
     type: Array,
@@ -6,9 +7,9 @@ const props = defineProps({
   }
 });
 
+// AppProduct prévient le parent quand on clique sur "Ajouter"
 const emit = defineEmits(['add-to-cart']);
 
-// AppProduct ne fait plus de fetch, il émet vers AppMain
 const addToCart = (product) => {
   emit('add-to-cart', product);
 };
