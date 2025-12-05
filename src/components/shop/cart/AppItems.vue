@@ -1,5 +1,6 @@
 <script setup>
-import { computed, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
+import DB from '@/services/DB.js';
 
 const props = defineProps({
   cart: {
@@ -14,37 +15,47 @@ const props = defineProps({
 
 const emit = defineEmits(['update-total']);
 
-// On reconstitue chaque item du panier (image, nom, prix, quantité)
-const items = computed(() => {
-  const result = [];
+// items manipulables localement
+const items = ref([]);
 
-  props.cart.forEach((line) => {
-    let found = null;
+// Reconstruit items local à partir de cart + products
+watch(
+  () => [props.cart, props.products],
+  () => {
+    const result = [];
 
-    // on cherche le produit associé au product_id
-    props.products.forEach((p) => {
-      if (p.id == line.product_id) {
-        found = p;
+    props.cart.forEach((line) => {
+      let found = null;
+
+      props.products.forEach((p) => {
+        if (p.id == line.product_id) {
+          found = p;
+        }
+      });
+
+      if (found !== null) {
+        let quantity = 1;
+
+        if (line.quantity !== undefined && line.quantity !== null) {
+          quantity = line.quantity;
+        }
+
+        result.push({
+          cartId: line.id,
+          name: found.name,
+          price: parseFloat(found.price),
+          image: found.image,
+          quantity: quantity
+        });
       }
     });
 
-    if (found !== null) {
-      const priceNumber = parseFloat(found.price);
+    items.value = result;
+  },
+  { immediate: true }
+);
 
-      result.push({
-        id: line.id,
-        name: found.name,
-        price: priceNumber,
-        image: found.image,
-        quantity: 1
-      });
-    }
-  });
-
-  return result;
-});
-
-// Total HTVA = somme des (prix * quantité)
+// Total HTVA
 const totalHTVA = computed(() => {
   let total = 0;
 
@@ -55,7 +66,7 @@ const totalHTVA = computed(() => {
   return total;
 });
 
-// On remonte ce total à AppCarte
+// Remonter le total
 watch(
   totalHTVA,
   (newValue) => {
@@ -63,15 +74,30 @@ watch(
   },
   { immediate: true }
 );
+
+// Modification de quantité
+const handleQuantityChange = (index, event) => {
+  const value = Number(event.target.value);
+
+  if (value >= 1) {
+    items.value[index].quantity = value;
+  }
+};
+
+const deleteItem = async (index, item) => {
+  await DB.deleteOneById(item.cartId);
+  items.value.splice(index, 1);
+};
 </script>
 
 <template>
   <h2 class="text-xl font-bold mb-4">Votre Panier</h2>
   <div class="cart bg-white rounded-lg shadow animate__animated">
     <ul class="divide-y divide-gray-200 space-y-4 p-6">
+
       <li
-        v-for="item in items"
-        :key="item.id"
+        v-for="(item, index) in items"
+        :key="item.cartId"
         class="flex justify-between items-center py-3"
       >
         <div class="flex items-center">
@@ -87,18 +113,24 @@ watch(
             </span>
           </div>
         </div>
+
         <div class="flex items-center">
           <input
             type="number"
             class="form-input mt-1 block w-16 text-center rounded text-gray-700 border-gray-300 border"
             :value="item.quantity"
             min="1"
+            @input="handleQuantityChange(index, $event)"
           />
-          <button class="ml-2 text-red-500 hover:text-red-700">
+          <button
+            class="ml-2 text-red-500 hover:text-red-700"
+            @click="deleteItem(index, item)"
+          >
             <i class="fas fa-times"></i>
           </button>
         </div>
       </li>
+
     </ul>
   </div>
 </template>

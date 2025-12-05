@@ -47,7 +47,7 @@ export default class DB {
 
   //supprimer un todo par son id
   static async deleteOneById(data) {
-    const response = await fetch(this.apiURL + "todos/" + data, {
+    const response = await fetch(this.apiURL + "cart/" + data, {
       method: "DELETE",
     });
     return response.json();
@@ -98,20 +98,55 @@ export default class DB {
   }
 
   //Ajouter un produit dans la table cart
-  //Ici on ne duplique PAS les infos du produit
-  //MockAPI stocke SEULEMENT product_id dans la table cart
-  static async addToCart(product) {
-    //Je POST dans cart uniquement product_id
-    const response = await fetch(this.apiURL + "cart", {
-      method: "POST",
+//Si le produit existe déjà dans cart => on augmente la quantity
+//Sinon => on crée une nouvelle ligne
+static async addToCart(product) {
+  // on récupère d'abord tout le panier
+  const cart = await this.getCart();
+
+  let existing = null;
+
+  cart.forEach((line) => {
+    if (line.product_id == product.id) {
+      existing = line;
+    }
+  });
+
+  // cas 1 : le produit est déjà dans le panier
+  if (existing !== null) {
+    let newQuantity = 1;
+
+    if (existing.quantity !== undefined && existing.quantity !== null) {
+      newQuantity = existing.quantity + 1;
+    } else {
+      newQuantity = 2;
+    }
+
+    const response = await fetch(this.apiURL + "cart/" + existing.id, {
+      method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        //product.id = envoyé par addToCart(product)
-        product_id: product.id
+        product_id: existing.product_id,
+        quantity: newQuantity
       }),
     });
+
     return response.json();
   }
+
+  // cas 2 : produit pas encore dans le panier
+  const response = await fetch(this.apiURL + "cart", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      product_id: product.id,
+      quantity: 1
+    }),
+  });
+
+  return response.json();
+}
+
 
   //supprimer une entrée du panier via son id
   static async deleteOneCartById(id) {
