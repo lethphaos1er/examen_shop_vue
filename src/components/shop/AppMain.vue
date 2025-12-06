@@ -1,49 +1,81 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import DB from '@/services/DB.js';
+import { onMounted, computed } from 'vue';
+import { storeToRefs } from 'pinia';
+
+import { useItemsStore } from '@/stores/items.js';
+import { useCartStore } from '@/stores/cart.js';
+
 import AppProduct from '@/components/shop/AppProduct.vue';
-import AppCarte from '@/components/shop/AppCarte.vue';
+import AppCart from '@/components/shop/AppCart.vue';
 
-// liste des produits (table product)
-const products = ref([]);
+const itemsStore = useItemsStore();
+const cartStore = useCartStore();
 
-// contenu du panier (table cart)
-const cart = ref([]);
+const { products } = storeToRefs(itemsStore);
+const { cart } = storeToRefs(cartStore);
 
-// au chargement de la page : on va chercher les produits et le panier existant
 onMounted(async () => {
-  const dataProducts = await DB.getProducts();
-  products.value = dataProducts;
-
-  const dataCart = await DB.getCart();
-  cart.value = dataCart;
+  await itemsStore.fetchItems();
+  await cartStore.fetchCart();
 });
 
-// quand AppProduct demande d'ajouter un produit au panier
-const handleAddToCart = async (product) => {
-  // on ajoute dans la table cart sur MockAPI
-  await DB.addToCart(product);
+const cartView = computed(() => {
+  const result = [];
 
-  // puis on recharge la cart pour avoir l'état à jour
-  const dataCart = await DB.getCart();
-  cart.value = dataCart;
-};
+  cart.value.forEach((line) => {
+    let product = null;
+
+    products.value.forEach((p) => {
+      if (p.id == line.product_id) {
+        product = p;
+      }
+    });
+
+    if (product !== null) {
+      result.push({
+        id: line.id,
+        product_id: line.product_id,
+        quantity: line.quantity,
+        name: product.name,
+        price: product.price,
+        image: product.image
+      });
+    }
+  });
+
+  return result;
+});
+
+async function handleAddToCart(product) {
+  await cartStore.addToCart(product);
+}
+
+async function deletOneByIdLine(id) {
+  await cartStore.deletOneByIdFromCart(id);
+}
+
+async function updateQuantity(payload) {
+  await cartStore.updateCartLine(payload.id, {
+    quantity: payload.quantity
+  });
+}
 </script>
 
 <template>
-  <main class="container mx-auto py-8 px-4 flex flex-wrap">
-    <section class="w-full md:w-2/3 px-4 mb-8">
-      <!-- AppProduct reçoit les produits et émet "add-to-cart" -->
+  <main class="container mx-auto px-4 py-8">
+    <section class="md:flex md:gap-8">
       <AppProduct
+        class="md:w-2/3"
         :products="products"
         @add-to-cart="handleAddToCart"
       />
-    </section>
 
-    <!-- AppCarte reçoit le panier et les produits -->
-    <AppCarte
-      :cart="cart"
-      :products="products"
-    />
+      <AppCart
+        class="md:w-1/3"
+        :cart="cartView"
+        @deletOneById-line="deletOneByIdLine"
+        @update-quantity="updateQuantity"
+      />
+    </section>
   </main>
 </template>

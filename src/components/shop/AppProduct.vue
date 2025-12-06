@@ -1,5 +1,4 @@
 <script setup>
-// AppProduct reçoit la liste des produits depuis AppMain
 const props = defineProps({
   products: {
     type: Array,
@@ -7,12 +6,11 @@ const props = defineProps({
   }
 });
 
-// AppProduct prévient le parent quand on clique sur "Ajouter"
 const emit = defineEmits(['add-to-cart']);
 
-const addToCart = (product) => {
+function add(product) {
   emit('add-to-cart', product);
-};
+}
 </script>
 
 <template>
@@ -43,7 +41,7 @@ const addToCart = (product) => {
           <button
             type="button"
             class="mt-4 w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            @click="addToCart(product)"
+            @click="add(product)"
           >
             Ajouter
           </button>
@@ -52,10 +50,11 @@ const addToCart = (product) => {
     </div>
   </section>
 </template>
+
 <style scoped>
 .product-image {
   width: 100%;
-  height: 220px !important; 
+  height: 220px !important;
   object-fit: cover;
   display: block;
 }

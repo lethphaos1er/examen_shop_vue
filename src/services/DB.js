@@ -1,5 +1,6 @@
 // src/services/DB.js
 
+
 // Ici c'est l'adresse de base de ma DB Mockapi
 const apiURL = 'https://692de13ee5f67cd80a4d4a6b.mockapi.io/shop/';
 
@@ -16,35 +17,6 @@ export default class DB {
     this.apiURL = url;
   }
 
-  // -------------------------------------------------------------------------
-  //  MÉTHODES DU PROJET TODOS (ORIGINE)
-  // -------------------------------------------------------------------------
-
-  //static : on ne modifiera pas
-  //async: on attend le retour de la DB
-  static async findAll() {
-    //je fetch = j’attends la réponse de this.apiURL + "todos"
-    const response = await fetch(this.apiURL + "todos");
-    //je return la réponse en json
-    return response.json();
-  }
-
-  //Ajouter un todo
-  static async create(data) {
-    //Je POST une nouvelle entrée dans la DB (todos)
-    const response = await fetch(this.apiURL + "todos", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      //ici je stringify la data reçue depuis addTodo(data)
-      body: JSON.stringify({
-        content: data.content,
-        completed: data.completed,
-        created_at: Date.now(),
-      }),
-    });
-    return response.json();
-  }
-
   //supprimer un todo par son id
   static async deleteOneById(data) {
     const response = await fetch(this.apiURL + "cart/" + data, {
@@ -52,22 +24,6 @@ export default class DB {
     });
     return response.json();
   }
-
-  //mettre à jour un todo (PUT) par son id
-  static async updateOneById(id, data) {
-    const response = await fetch(this.apiURL + "todos/" + id, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    return response.json();
-  }
-
-  // -------------------------------------------------------------------------
-  //  🛒 MÉTHODES AJOUTÉES POUR TON SHOP (PRODUCT + CART)
-  // -------------------------------------------------------------------------
-  //  Je conserve exactement ta manière de commenter
-  // -------------------------------------------------------------------------
 
   //static : on ne modifiera pas
   //async: on attend le retour de la DB
@@ -86,10 +42,7 @@ export default class DB {
     return response.json();
   }
 
-  // -------------------------------------------------------------------------
-  //  TABLE CART (ne contient que : id, createdAt, product_id)
-  // -------------------------------------------------------------------------
-
+  // TABLE CART (ne contient que : id, createdAt, product_id)
   //récupérer le contenu du panier
   static async getCart() {
     //cart = table vide au départ, remplie par addToCart()
@@ -114,25 +67,19 @@ static async addToCart(product) {
 
   // cas 1 : le produit est déjà dans le panier
   if (existing !== null) {
-    let newQuantity = 1;
+  const newQuantity = existing.quantity + 1;
 
-    if (existing.quantity !== undefined && existing.quantity !== null) {
-      newQuantity = existing.quantity + 1;
-    } else {
-      newQuantity = 2;
-    }
+  const response = await fetch(this.apiURL + "cart/" + existing.id, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      product_id: existing.product_id,
+      quantity: newQuantity
+    }),
+  });
 
-    const response = await fetch(this.apiURL + "cart/" + existing.id, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        product_id: existing.product_id,
-        quantity: newQuantity
-      }),
-    });
-
-    return response.json();
-  }
+  return response.json();
+}
 
   // cas 2 : produit pas encore dans le panier
   const response = await fetch(this.apiURL + "cart", {
@@ -149,7 +96,7 @@ static async addToCart(product) {
 
 
   //supprimer une entrée du panier via son id
-  static async deleteOneCartById(id) {
+  static async deletOneById(id) {
     const response = await fetch(this.apiURL + "cart/" + id, {
       method: "DELETE",
     });
@@ -167,10 +114,5 @@ static async addToCart(product) {
   }
 
 }
-
-// -------------------------------------------------------------------------
-//  ⚠️ INITIALISATION AUTOMATIQUE DE LA DB
-//  On appelle setApiURL ici pour que toutes les méthodes puissent fonctionner
-// -------------------------------------------------------------------------
-
+// INITIALISATION AUTOMATIQUE DE LA DB
 DB.setApiURL(apiURL);
